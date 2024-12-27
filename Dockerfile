@@ -1,9 +1,35 @@
-# Используем базовый образ с поддержкой CUDA
+# Базовый образ с поддержкой CUDA
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
 
-# Устанавливаем Python (замените на 3.13, если доступен)
-RUN apt-get update && \
-    apt-get install -y python3.12 python3.12-venv python3.12-dev python3-pip && \
+# Устанавливаем зависимости для сборки Python
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
+    libsqlite3-dev \
+    wget \
+    curl \
+    libbz2-dev \
+    && apt-get clean
+
+# Скачиваем и компилируем Python 3.12
+ENV PYTHON_VERSION=3.12.0
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+    tar -xvf Python-${PYTHON_VERSION}.tgz && \
+    cd Python-${PYTHON_VERSION} && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && \
+    make altinstall && \
+    cd .. && \
+    rm -rf Python-${PYTHON_VERSION} Python-${PYTHON_VERSION}.tgz
+
+# Устанавливаем pip и обновляем
+RUN python3.12 -m ensurepip && \
     python3.12 -m pip install --upgrade pip
 
 # Устанавливаем JupyterLab
